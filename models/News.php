@@ -49,7 +49,6 @@ class News extends \yii\db\ActiveRecord
                 unlink($dir . $this->img);
             }
 
-
             $file->saveAs($dir.$this->img);
         }
         return parent::beforeSave($insert);

@@ -129,25 +129,53 @@ class NewsController extends Controller
     /**
      * @return \yii\web\Response
      */
-    public function actionUploads()
+    public function actionUploads($id = null)
     {
-        $model = new News();
+        if ($id != null) {
+            $model = $this->findModel($id);
 
-        if (Yii::$app->request->post()) {
-            $file = UploadedFile::getInstance($model, 'file');
+            if (Yii::$app->request->post()) {
+                $file = UploadedFile::getInstance($model, 'file');
 
-            $addres = Yii::getAlias('@web/uploads/') . $file->name;
-            $model->img = $file->name;
-            $file->saveAs(Yii::getAlias('@webroot/uploads/kartynka.jpg'));
+                $model->img = $file->name;
+                $model->save();
+            }
+            else
+                $model = Null;
+        } else {
+            if (Yii::$app->request->post()) {
+                $model = new News();
+                $file = UploadedFile::getInstance($model, 'file');
+                if ($model->img == Null) {
+                    $model->img = $file->name;
+                    $model->save();
+                }
+                 if ($model->name == Null) {
+                     $model->name = 'Необхідно редагувати ім\'я';
+                     $model->save();
+                }
+                 if ($model->img == Null) {
+                     $model->short_description = 'Необхідно редагувати короткий опис';
+                     $model->save();
+                }
+                 if ($model->description == Null) {
+                     $model->description = 'Необхідно редагувати опис';
+                     $model->save();
+                }
+            }
+            else
+                $model = Null;
+        }
+        if ($file->saveAs(Yii::getAlias('@webroot/uploads/' . $model->img))) {
+            $addres = Yii::getAlias('@web/uploads/' . $file->name);
             return $this->asJson([
-
                 'initialPreview' => [
                     $addres,
                 ],
                 'initialPreviewConfig' => [
                     'url' => Yii::getAlias('@webroot/uploads/'),
-                    'extra' => ['id' => 10,
-                            'file'=> $model->img,
+                    'extra' => [
+                        'key' => $file->name,
                     ],
                 ],
                 'initialPreviewThumbTags' => [
@@ -160,24 +188,31 @@ class NewsController extends Controller
             ]);
         } else {
             return $this->asJson([
-                'error' => Yii::t('app', 'Ви зробили щось неправильно!'),
+                'error' => Yii::t('app', ''),
             ]);
+
         }
     }
 
-    public function actionDeleteImage()
+
+    public function actionDeleteImage($id)
     {
         if (Yii::$app->request->post()) {
-            print_r($_POST);
-            $key = Yii::$app->request->post()['key'];
-            unlink(Yii::getAlias('@webroot/uploads/') . $key);
-
-            return $this->asJson([
-                'append' => false,
-            ]);
+            if (Yii::$app->request->post('key') == 'update') {
+                $model = $this->findModel($id);
+                $model->img = Null;
+                $model->save();
+                unlink(Yii::getAlias('@webroot/uploads/' . Yii::$app->request->post('mode')));
+                return $this->asJson(' ');
+            } else {
+                $a = Yii::$app->request->post('fileName');
+                unlink(Yii::getAlias('@webroot/uploads/' . $a));
+                return $this->asJson($id);
+            }
         }
+        print_r($_POST);
         return $this->asJson([
-            'append' => false,
+            'error' => Yii::t('app', 'Ви зробили щось неправильно!'),
         ]);
 
     }
